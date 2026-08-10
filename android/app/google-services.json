@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "740112379740",
+    "project_id": "volunteer-connect-f157f",
+    "storage_bucket": "volunteer-connect-f157f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:740112379740:android:799bdde62e4d5deac0db99",
+        "android_client_info": {
+          "package_name": "com.volunteerconnect.volunteer_connect"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDcnFZ-PaVV4tYGoTj7xAXhizFl0Avjzek"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
