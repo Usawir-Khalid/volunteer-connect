@@ -21,7 +21,7 @@ class FilterBottomSheet extends StatefulWidget {
   final String selectedDate;
   final String selectedDistance;
 
-  final Function(
+  final void Function(
     String category,
     String location,
     String date,
@@ -85,12 +85,12 @@ class _FilterBottomSheetState
       _distance,
     );
 
-    Navigator.pop(context);
+    Navigator.of(context).pop();
   }
 
   void _clearFilters() {
     widget.onClear();
-    Navigator.pop(context);
+    Navigator.of(context).pop();
   }
 
   @override
@@ -99,7 +99,9 @@ class _FilterBottomSheetState
       decoration: const BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppRadius.large),
+          top: Radius.circular(
+            AppRadius.large,
+          ),
         ),
       ),
       child: SafeArea(
@@ -113,7 +115,8 @@ class _FilterBottomSheetState
               AppSpacing.lg,
             ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
               children: [
                 // Handle
                 Center(
@@ -122,15 +125,19 @@ class _FilterBottomSheetState
                     height: 4,
                     decoration: BoxDecoration(
                       color: AppColors.border,
-                      borderRadius: BorderRadius.circular(
+                      borderRadius:
+                          BorderRadius.circular(
                         AppRadius.pill,
                       ),
                     ),
                   ),
                 ),
 
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(
+                  height: AppSpacing.lg,
+                ),
 
+                // Header
                 Row(
                   children: [
                     Expanded(
@@ -141,19 +148,25 @@ class _FilterBottomSheetState
                           Text(
                             'Filter Opportunities',
                             style: AppTypography
-                                .textTheme.headlineMedium,
+                                .textTheme
+                                .headlineMedium,
                           ),
-                          const SizedBox(height: AppSpacing.xs),
+                          const SizedBox(
+                            height: AppSpacing.xs,
+                          ),
                           Text(
                             'Refine your search to find the right fit.',
                             style: AppTypography
-                                .textTheme.bodySmall,
+                                .textTheme
+                                .bodySmall,
                           ),
                         ],
                       ),
                     ),
                     IconButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
                       icon: const Icon(
                         Icons.close_rounded,
                       ),
@@ -161,7 +174,9 @@ class _FilterBottomSheetState
                   ],
                 ),
 
-                const SizedBox(height: AppSpacing.xl),
+                const SizedBox(
+                  height: AppSpacing.xl,
+                ),
 
                 _FilterSection(
                   title: 'Category',
@@ -174,7 +189,9 @@ class _FilterBottomSheetState
                   },
                 ),
 
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(
+                  height: AppSpacing.lg,
+                ),
 
                 _FilterSection(
                   title: 'Location',
@@ -187,7 +204,9 @@ class _FilterBottomSheetState
                   },
                 ),
 
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(
+                  height: AppSpacing.lg,
+                ),
 
                 _FilterSection(
                   title: 'Date',
@@ -200,7 +219,9 @@ class _FilterBottomSheetState
                   },
                 ),
 
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(
+                  height: AppSpacing.lg,
+                ),
 
                 _FilterSection(
                   title: 'Distance',
@@ -213,7 +234,9 @@ class _FilterBottomSheetState
                   },
                 ),
 
-                const SizedBox(height: AppSpacing.xl),
+                const SizedBox(
+                  height: AppSpacing.xl,
+                ),
 
                 Row(
                   children: [
@@ -223,12 +246,16 @@ class _FilterBottomSheetState
                         child: const Text('Clear'),
                       ),
                     ),
-                    const SizedBox(width: AppSpacing.md),
+                    const SizedBox(
+                      width: AppSpacing.md,
+                    ),
                     Expanded(
                       flex: 2,
                       child: ElevatedButton(
                         onPressed: _applyFilters,
-                        child: const Text('Show Results'),
+                        child: const Text(
+                          'Show Results',
+                        ),
                       ),
                     ),
                   ],
@@ -258,25 +285,33 @@ class _FilterSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
       children: [
         Text(
           title,
           style: AppTypography.textTheme.titleMedium,
         ),
-        const SizedBox(height: AppSpacing.sm),
+
+        const SizedBox(
+          height: AppSpacing.sm,
+        ),
 
         Wrap(
           spacing: AppSpacing.sm,
           runSpacing: AppSpacing.sm,
           children: options.map((option) {
-            final selected = option == selectedOption;
+            final selected =
+                option == selectedOption;
 
             return GestureDetector(
               onTap: () => onSelected(option),
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 160),
-                padding: const EdgeInsets.symmetric(
+                duration: const Duration(
+                  milliseconds: 160,
+                ),
+                padding:
+                    const EdgeInsets.symmetric(
                   horizontal: AppSpacing.md,
                   vertical: AppSpacing.sm,
                 ),
@@ -284,7 +319,8 @@ class _FilterSection extends StatelessWidget {
                   color: selected
                       ? AppColors.primaryLight
                       : AppColors.background,
-                  borderRadius: BorderRadius.circular(
+                  borderRadius:
+                      BorderRadius.circular(
                     AppRadius.pill,
                   ),
                   border: Border.all(
@@ -304,18 +340,23 @@ class _FilterSection extends StatelessWidget {
                         child: Icon(
                           Icons.check_rounded,
                           size: 16,
-                          color: AppColors.primary,
+                          color:
+                              AppColors.primary,
                         ),
                       ),
                     Text(
                       option,
                       style: AppTypography
-                          .textTheme.labelLarge
+                          .textTheme
+                          .labelLarge
                           ?.copyWith(
-                        color: selected
-                            ? AppColors.primary
-                            : AppColors.textPrimary,
-                      ),
+                            color: selected
+                                ? AppColors.primary
+                                : AppColors.textPrimary,
+                            fontWeight: selected
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                          ),
                     ),
                   ],
                 ),
