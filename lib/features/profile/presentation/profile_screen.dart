@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -17,23 +18,33 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState
     extends State<ProfileScreen> {
-  final ProfileData _profile = ProfileData.instance;
+  final ProfileData _profile =
+      ProfileData.instance;
+
+  bool _isLoggingOut = false;
 
   @override
   void initState() {
     super.initState();
-    _profile.addListener(_onProfileChanged);
+
+    _profile.addListener(
+      _onProfileChanged,
+    );
+
+    _loadProfile();
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
+  Future<void> _loadProfile() async {
     _profile.refreshAuthenticatedEmail();
+    await _profile.loadFromFirestore();
   }
 
   @override
   void dispose() {
-    _profile.removeListener(_onProfileChanged);
+    _profile.removeListener(
+      _onProfileChanged,
+    );
+
     super.dispose();
   }
 
@@ -43,13 +54,91 @@ class _ProfileScreenState
     }
   }
 
+  Future<void> _logout() async {
+    if (_isLoggingOut) {
+      return;
+    }
+
+    setState(() {
+      _isLoggingOut = true;
+    });
+
+    try {
+      await FirebaseAuth.instance
+          .signOut();
+
+      _profile.clear();
+
+      if (!mounted) return;
+
+      context.go('/login');
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoggingOut = false;
+      });
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Unable to log out. Please try again.',
+          ),
+        ),
+      );
+    }
+  }
+
+  void _showLogoutDialog(
+    BuildContext context,
+  ) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title:
+              const Text('Log Out?'),
+          content:
+              const Text(
+            'Are you sure you want to log out of Volunteer Connect?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(
+                  dialogContext,
+                );
+              },
+              child:
+                  const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(
+                  dialogContext,
+                );
+
+                _logout();
+              },
+              child:
+                  const Text('Log Out'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor:
+          AppColors.background,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(
+          padding:
+              const EdgeInsets.fromLTRB(
             AppSpacing.lg,
             AppSpacing.lg,
             AppSpacing.lg,
@@ -59,13 +148,20 @@ class _ProfileScreenState
             crossAxisAlignment:
                 CrossAxisAlignment.start,
             children: [
-              _buildHeader(),
+              Text(
+                'Profile',
+                style: AppTypography
+                    .textTheme
+                    .headlineLarge,
+              ),
 
               const SizedBox(
                 height: AppSpacing.lg,
               ),
 
-              _buildProfileCard(context),
+              _buildProfileCard(
+                context,
+              ),
 
               const SizedBox(
                 height: AppSpacing.xl,
@@ -107,26 +203,56 @@ class _ProfileScreenState
                 height: AppSpacing.md,
               ),
 
-              _buildAccountCard(context),
+              _buildAccountCard(
+                context,
+              ),
 
               const SizedBox(
                 height: AppSpacing.xl,
               ),
 
-              _buildLogoutButton(context),
+              SizedBox(
+                width: double.infinity,
+                child:
+                    TextButton.icon(
+                  onPressed:
+                      _isLoggingOut
+                          ? null
+                          : () {
+                              _showLogoutDialog(
+                                context,
+                              );
+                            },
+                  icon: _isLoggingOut
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child:
+                              CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Icon(
+                          Icons.logout,
+                          color:
+                              AppColors.error,
+                        ),
+                  label: Text(
+                    _isLoggingOut
+                        ? 'Logging out...'
+                        : 'Log Out',
+                    style:
+                        const TextStyle(
+                      color:
+                          AppColors.error,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Text(
-      'Profile',
-      style: AppTypography
-          .textTheme
-          .headlineLarge,
     );
   }
 
@@ -135,17 +261,22 @@ class _ProfileScreenState
   ) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(
+      padding:
+          const EdgeInsets.all(
         AppSpacing.lg,
       ),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
+      decoration:
+          BoxDecoration(
+        color:
+            AppColors.surface,
         borderRadius:
             BorderRadius.circular(
           AppRadius.card,
         ),
-        border: Border.all(
-          color: AppColors.border,
+        border:
+            Border.all(
+          color:
+              AppColors.border,
         ),
       ),
       child: Column(
@@ -153,20 +284,29 @@ class _ProfileScreenState
           Container(
             width: 82,
             height: 82,
-            decoration: BoxDecoration(
-              color: AppColors.primaryLight,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: AppColors.primary.withValues(
+            decoration:
+                BoxDecoration(
+              color:
+                  AppColors.primaryLight,
+              shape:
+                  BoxShape.circle,
+              border:
+                  Border.all(
+                color: AppColors
+                    .primary
+                    .withValues(
                   alpha: 0.15,
                 ),
                 width: 3,
               ),
             ),
-            child: const Icon(
-              Icons.person_outline,
+            child:
+                const Icon(
+              Icons
+                  .person_outline,
               size: 42,
-              color: AppColors.primary,
+              color:
+                  AppColors.primary,
             ),
           ),
 
@@ -176,7 +316,8 @@ class _ProfileScreenState
 
           Text(
             _profile.name,
-            textAlign: TextAlign.center,
+            textAlign:
+                TextAlign.center,
             style: AppTypography
                 .textTheme
                 .headlineSmall,
@@ -188,34 +329,37 @@ class _ProfileScreenState
 
           Text(
             _profile.email,
-            textAlign: TextAlign.center,
+            textAlign:
+                TextAlign.center,
             style: AppTypography
                 .textTheme
                 .bodyMedium,
           ),
 
-          if (_profile.location.isNotEmpty) ...[
+          if (_profile
+              .location
+              .isNotEmpty) ...[
             const SizedBox(
               height: AppSpacing.xs,
             ),
-
             Row(
               mainAxisAlignment:
-                  MainAxisAlignment.center,
+                  MainAxisAlignment
+                      .center,
               children: [
                 const Icon(
-                  Icons.location_on_outlined,
+                  Icons
+                      .location_on_outlined,
                   size: 16,
-                  color:
-                      AppColors.textSecondary,
+                  color: AppColors
+                      .textSecondary,
                 ),
-
                 const SizedBox(
                   width: 4,
                 ),
-
                 Text(
-                  _profile.location,
+                  _profile
+                      .location,
                   style: AppTypography
                       .textTheme
                       .bodySmall,
@@ -229,18 +373,24 @@ class _ProfileScreenState
           ),
 
           SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
+            width:
+                double.infinity,
+            child:
+                OutlinedButton
+                    .icon(
               onPressed: () {
                 context.push(
                   '/profile/edit',
                 );
               },
-              icon: const Icon(
-                Icons.edit_outlined,
+              icon:
+                  const Icon(
+                Icons
+                    .edit_outlined,
                 size: 18,
               ),
-              label: const Text(
+              label:
+                  const Text(
                 'Edit Profile',
               ),
             ),
@@ -263,12 +413,16 @@ class _ProfileScreenState
 
   Widget _buildImpactCard() {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(
+      width:
+          double.infinity,
+      padding:
+          const EdgeInsets.all(
         AppSpacing.md,
       ),
-      decoration: BoxDecoration(
-        color: AppColors.primaryLight
+      decoration:
+          BoxDecoration(
+        color: AppColors
+            .primaryLight
             .withValues(
           alpha: 0.55,
         ),
@@ -276,42 +430,42 @@ class _ProfileScreenState
             BorderRadius.circular(
           AppRadius.card,
         ),
-        border: Border.all(
-          color: AppColors.primary.withValues(
+        border:
+            Border.all(
+          color: AppColors
+              .primary
+              .withValues(
             alpha: 0.12,
           ),
         ),
       ),
       child: Row(
         children: [
-          Expanded(
+          const Expanded(
             child: _ImpactStat(
               value: '12',
-              label: 'Opportunities',
+              label:
+                  'Opportunities',
               icon: Icons
                   .volunteer_activism_outlined,
             ),
           ),
-
           _buildDivider(),
-
-          Expanded(
+          const Expanded(
             child: _ImpactStat(
               value: '48',
               label: 'Hours',
-              icon:
-                  Icons.schedule_outlined,
+              icon: Icons
+                  .schedule_outlined,
             ),
           ),
-
           _buildDivider(),
-
-          Expanded(
+          const Expanded(
             child: _ImpactStat(
               value: '8',
               label: 'Events',
-              icon:
-                  Icons.event_outlined,
+              icon: Icons
+                  .event_outlined,
             ),
           ),
         ],
@@ -323,27 +477,35 @@ class _ProfileScreenState
     return Container(
       width: 1,
       height: 62,
-      color: AppColors.border,
+      color:
+          AppColors.border,
     );
   }
 
   Widget _buildInterestsCard() {
     final interests =
-        _profile.interests.toList();
+        _profile.interests
+            .toList();
 
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(
+      width:
+          double.infinity,
+      padding:
+          const EdgeInsets.all(
         AppSpacing.md,
       ),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
+      decoration:
+          BoxDecoration(
+        color:
+            AppColors.surface,
         borderRadius:
             BorderRadius.circular(
           AppRadius.card,
         ),
-        border: Border.all(
-          color: AppColors.border,
+        border:
+            Border.all(
+          color:
+              AppColors.border,
         ),
       ),
       child: interests.isEmpty
@@ -354,7 +516,8 @@ class _ProfileScreenState
                   .bodyMedium,
             )
           : Wrap(
-              spacing: AppSpacing.sm,
+              spacing:
+                  AppSpacing.sm,
               runSpacing:
                   AppSpacing.sm,
               children:
@@ -381,15 +544,15 @@ class _ProfileScreenState
                     ),
                     child: Text(
                       interest,
-                      style: AppTypography
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(
+                      style:
+                          AppTypography
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(
                         color: AppColors
                             .primary,
                         fontWeight:
-                            FontWeight
-                                .w600,
+                            FontWeight.w600,
                       ),
                     ),
                   );
@@ -403,15 +566,20 @@ class _ProfileScreenState
     BuildContext context,
   ) {
     return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: AppColors.surface,
+      width:
+          double.infinity,
+      decoration:
+          BoxDecoration(
+        color:
+            AppColors.surface,
         borderRadius:
             BorderRadius.circular(
           AppRadius.card,
         ),
-        border: Border.all(
-          color: AppColors.border,
+        border:
+            Border.all(
+          color:
+              AppColors.border,
         ),
       ),
       child: Column(
@@ -436,8 +604,8 @@ class _ProfileScreenState
           ),
 
           _ProfileMenuItem(
-            icon:
-                Icons.history_outlined,
+            icon: Icons
+                .history_outlined,
             title:
                 'Volunteer History',
             subtitle:
@@ -455,80 +623,19 @@ class _ProfileScreenState
           ),
 
           _ProfileMenuItem(
-            icon:
-                Icons.settings_outlined,
+            icon: Icons
+                .settings_outlined,
             title: 'Settings',
             subtitle:
                 'Manage your app preferences',
-            onTap: () {},
+            onTap: () {
+              context.push(
+                '/profile/settings',
+              );
+            },
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildLogoutButton(
-    BuildContext context,
-  ) {
-    return SizedBox(
-      width: double.infinity,
-      child: TextButton.icon(
-        onPressed: () {
-          _showLogoutDialog(context);
-        },
-        icon: const Icon(
-          Icons.logout,
-          color: AppColors.error,
-        ),
-        label: const Text(
-          'Log Out',
-          style: TextStyle(
-            color: AppColors.error,
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showLogoutDialog(
-    BuildContext context,
-  ) {
-    showDialog<void>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text(
-            'Log Out?',
-          ),
-          content: const Text(
-            'Are you sure you want to log out of '
-            'Volunteer Connect?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(
-                  dialogContext,
-                );
-              },
-              child: const Text(
-                'Cancel',
-              ),
-            ),
-
-            FilledButton(
-              onPressed: () {
-                Navigator.pop(
-                  dialogContext,
-                );
-              },
-              child: const Text(
-                'Log Out',
-              ),
-            ),
-          ],
-        );
-      },
     );
   }
 }
@@ -554,13 +661,12 @@ class _ImpactStat
         Icon(
           icon,
           size: 22,
-          color: AppColors.primary,
+          color:
+              AppColors.primary,
         ),
-
         const SizedBox(
           height: AppSpacing.xs,
         ),
-
         Text(
           value,
           style: AppTypography
@@ -573,11 +679,9 @@ class _ImpactStat
                 FontWeight.w700,
           ),
         ),
-
         const SizedBox(
           height: 2,
         ),
-
         Text(
           label,
           textAlign:
@@ -630,8 +734,8 @@ class _ProfileMenuItem
               height: 42,
               decoration:
                   BoxDecoration(
-                color:
-                    AppColors.primaryLight,
+                color: AppColors
+                    .primaryLight,
                 borderRadius:
                     BorderRadius.circular(
                   12,
@@ -644,11 +748,10 @@ class _ProfileMenuItem
                 size: 21,
               ),
             ),
-
             const SizedBox(
-              width: AppSpacing.md,
+              width:
+                  AppSpacing.md,
             ),
-
             Expanded(
               child: Column(
                 crossAxisAlignment:
@@ -661,17 +764,14 @@ class _ProfileMenuItem
                         .textTheme
                         .titleMedium,
                   ),
-
                   const SizedBox(
                     height: 2,
                   ),
-
                   Text(
                     subtitle,
                     maxLines: 1,
                     overflow:
-                        TextOverflow
-                            .ellipsis,
+                        TextOverflow.ellipsis,
                     style: AppTypography
                         .textTheme
                         .bodySmall,
@@ -679,11 +779,10 @@ class _ProfileMenuItem
                 ],
               ),
             ),
-
             const Icon(
               Icons.chevron_right,
-              color:
-                  AppColors.textSecondary,
+              color: AppColors
+                  .textSecondary,
             ),
           ],
         ),

@@ -16,61 +16,51 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState
     extends State<EditProfileScreen> {
-  final _formKey = GlobalKey<FormState>();
-
-  final ProfileData _profile = ProfileData.instance;
-
   late final TextEditingController _nameController;
   late final TextEditingController _locationController;
   late final TextEditingController _bioController;
 
-  late Set<String> _selectedInterests;
+  bool _isSaving = false;
 
-  static const List<_InterestOption> _interests = [
-    _InterestOption(
-      name: 'Environment',
-      icon: Icons.eco_outlined,
-    ),
-    _InterestOption(
-      name: 'Education',
-      icon: Icons.school_outlined,
-    ),
-    _InterestOption(
-      name: 'Community',
-      icon: Icons.groups_outlined,
-    ),
-    _InterestOption(
-      name: 'Animals',
-      icon: Icons.pets_outlined,
-    ),
-    _InterestOption(
-      name: 'Healthcare',
-      icon: Icons.health_and_safety_outlined,
-    ),
-    _InterestOption(
-      name: 'Remote',
-      icon: Icons.laptop_outlined,
-    ),
+  final List<String> _availableInterests = const [
+    'Environment',
+    'Education',
+    'Community',
+    'Animals',
+    'Healthcare',
+    'Remote',
+    'Youth',
+    'Senior Support',
   ];
+
+  late Set<String> _selectedInterests;
 
   @override
   void initState() {
     super.initState();
 
-    _nameController = TextEditingController(
-      text: _profile.name,
+    final profile =
+        ProfileData.instance;
+
+    _nameController =
+        TextEditingController(
+      text: profile.name,
     );
 
-    _locationController = TextEditingController(
-      text: _profile.location,
+    _locationController =
+        TextEditingController(
+      text: profile.location,
     );
 
-    _bioController = TextEditingController(
-      text: _profile.bio,
+    _bioController =
+        TextEditingController(
+      text: profile.bio,
     );
 
     _selectedInterests =
-        Set<String>.from(_profile.interests);
+        Set<String>.from(
+      profile.interests,
+    );
   }
 
   @override
@@ -82,487 +72,526 @@ class _EditProfileScreenState
     super.dispose();
   }
 
-  void _toggleInterest(String interest) {
-    setState(() {
-      if (_selectedInterests.contains(interest)) {
-        _selectedInterests.remove(interest);
-      } else {
-        _selectedInterests.add(interest);
-      }
-    });
-  }
+  Future<void> _saveProfile() async {
+    final name =
+        _nameController.text.trim();
 
-  void _saveProfile() {
-    FocusScope.of(context).unfocus();
+    final location =
+        _locationController.text.trim();
 
-    if (!_formKey.currentState!.validate()) {
+    final bio =
+        _bioController.text.trim();
+
+    if (name.isEmpty) {
+      _showMessage(
+        'Please enter your name.',
+      );
       return;
     }
 
-    _profile.updateProfile(
-      name: _nameController.text.trim(),
-      location: _locationController.text.trim(),
-      bio: _bioController.text.trim(),
-      interests: _selectedInterests,
+    if (location.isEmpty) {
+      _showMessage(
+        'Please select your location.',
+      );
+      return;
+    }
+
+    if (_selectedInterests.isEmpty) {
+      _showMessage(
+        'Please select at least one interest.',
+      );
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    final success =
+        await ProfileData.instance
+            .updateProfile(
+      name: name,
+      location: location,
+      bio: bio,
+      interests:
+          _selectedInterests,
     );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Profile updated successfully',
+    if (!mounted) return;
+
+    setState(() {
+      _isSaving = false;
+    });
+
+    if (success) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Profile updated successfully.',
+          ),
         ),
-      ),
-    );
+      );
 
-    Navigator.pop(context);
+      Navigator.of(context).pop();
+    } else {
+      _showMessage(
+        'Unable to save your profile. Please try again.',
+      );
+    }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Edit Profile'),
+  void _showMessage(
+    String message,
+  ) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
+      SnackBar(
+        content: Text(message),
       ),
-      body: SafeArea(
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(
+    );
+  }
+
+  Future<void> _showLocationPicker() async {
+    const locations = [
+      'San Francisco, CA',
+      'New York, NY',
+      'Lahore, Pakistan',
+      'Dubai, UAE',
+      'Any location',
+    ];
+
+    final selected =
+        await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor:
+          AppColors.surface,
+      shape:
+          const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(
+          top: Radius.circular(24),
+        ),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding:
+                const EdgeInsets.all(
               AppSpacing.lg,
-              AppSpacing.md,
-              AppSpacing.lg,
-              AppSpacing.xxl,
             ),
             child: Column(
+              mainAxisSize:
+                  MainAxisSize.min,
               crossAxisAlignment:
                   CrossAxisAlignment.start,
               children: [
-                _buildAvatar(),
-
-                const SizedBox(
-                  height: AppSpacing.xl,
-                ),
-
-                _buildSectionTitle(
-                  'Personal Information',
-                ),
-
-                const SizedBox(
-                  height: AppSpacing.md,
-                ),
-
-                _buildTextField(
-                  controller: _nameController,
-                  label: 'Full Name',
-                  hint: 'Enter your name',
-                  icon: Icons.person_outline,
-                  validator: (value) {
-                    if (value == null ||
-                        value.trim().isEmpty) {
-                      return 'Please enter your name';
-                    }
-
-                    return null;
-                  },
-                ),
-
-                const SizedBox(
-                  height: AppSpacing.md,
-                ),
-
-                _buildEmailField(),
-
-                const SizedBox(
-                  height: AppSpacing.md,
-                ),
-
-                _buildTextField(
-                  controller: _locationController,
-                  label: 'Location',
-                  hint: 'Enter your location',
-                  icon: Icons.location_on_outlined,
-                ),
-
-                const SizedBox(
-                  height: AppSpacing.md,
-                ),
-
-                _buildTextField(
-                  controller: _bioController,
-                  label: 'About You',
-                  hint:
-                      'Tell organizations a little about you',
-                  icon: Icons.edit_note_outlined,
-                  maxLines: 4,
-                  maxLength: 200,
-                ),
-
-                const SizedBox(
-                  height: AppSpacing.xl,
-                ),
-
-                _buildSectionTitle(
-                  'Your Interests',
-                ),
-
-                const SizedBox(
-                  height: AppSpacing.xs,
-                ),
-
                 Text(
-                  'Choose the causes you would like to '
-                  'volunteer for.',
-                  style:
-                      AppTypography.textTheme.bodyMedium,
+                  'Select Location',
+                  style: AppTypography
+                      .textTheme
+                      .titleLarge
+                      ?.copyWith(
+                    fontWeight:
+                        FontWeight.w700,
+                  ),
                 ),
-
                 const SizedBox(
                   height: AppSpacing.md,
                 ),
+                ...locations.map(
+                  (location) {
+                    final selected =
+                        location ==
+                            _locationController
+                                .text;
 
-                _buildInterestSelector(),
-
-                const SizedBox(
-                  height: AppSpacing.xl,
-                ),
-
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: _saveProfile,
-                    child: const Text(
-                      'Save Changes',
-                    ),
-                  ),
-                ),
-
-                const SizedBox(
-                  height: AppSpacing.sm,
-                ),
-
-                SizedBox(
-                  width: double.infinity,
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: const Text(
-                      'Cancel',
-                    ),
-                  ),
+                    return ListTile(
+                      contentPadding:
+                          EdgeInsets.zero,
+                      leading: Icon(
+                        selected
+                            ? Icons
+                                .radio_button_checked
+                            : Icons
+                                .radio_button_off,
+                        color: selected
+                            ? AppColors.primary
+                            : AppColors
+                                .textSecondary,
+                      ),
+                      title:
+                          Text(location),
+                      onTap: () {
+                        Navigator.pop(
+                          sheetContext,
+                          location,
+                        );
+                      },
+                    );
+                  },
                 ),
               ],
             ),
           ),
-        ),
+        );
+      },
+    );
+
+    if (selected == null ||
+        !mounted) {
+      return;
+    }
+
+    setState(() {
+      _locationController.text =
+          selected;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final profile =
+        ProfileData.instance;
+
+    return Scaffold(
+      backgroundColor:
+          AppColors.background,
+      appBar: AppBar(
+        title:
+            const Text('Edit Profile'),
       ),
-    );
-  }
+      body: SingleChildScrollView(
+        padding:
+            const EdgeInsets.all(
+          AppSpacing.lg,
+        ),
+        child: Column(
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Personal Information',
+              style: AppTypography
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(
+                fontWeight:
+                    FontWeight.w700,
+              ),
+            ),
 
-  Widget _buildAvatar() {
-    return Center(
-      child: Column(
-        children: [
-          Container(
-            width: 96,
-            height: 96,
-            decoration: BoxDecoration(
-              color: AppColors.primaryLight,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: AppColors.primary.withValues(
-                  alpha: 0.18,
+            const SizedBox(
+              height: AppSpacing.lg,
+            ),
+
+            _FieldLabel(
+              label: 'Name',
+            ),
+
+            const SizedBox(
+              height: AppSpacing.xs,
+            ),
+
+            TextField(
+              controller:
+                  _nameController,
+              textInputAction:
+                  TextInputAction.next,
+              decoration:
+                  const InputDecoration(
+                prefixIcon: Icon(
+                  Icons
+                      .person_outline_rounded,
                 ),
-                width: 3,
+                hintText:
+                    'Enter your name',
               ),
             ),
-            child: const Icon(
-              Icons.person_outline,
-              size: 48,
-              color: AppColors.primary,
+
+            const SizedBox(
+              height: AppSpacing.md,
             ),
-          ),
 
-          const SizedBox(
-            height: AppSpacing.sm,
-          ),
+            _FieldLabel(
+              label: 'Email',
+            ),
 
-          TextButton.icon(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Profile photo selection will be added later.',
-                  ),
+            const SizedBox(
+              height: AppSpacing.xs,
+            ),
+
+            TextField(
+              readOnly: true,
+              controller:
+                  TextEditingController(
+                text: profile.email,
+              ),
+              decoration:
+                  const InputDecoration(
+                prefixIcon: Icon(
+                  Icons
+                      .email_outlined,
                 ),
-              );
-            },
-            icon: const Icon(
-              Icons.camera_alt_outlined,
-              size: 18,
-            ),
-            label: const Text(
-              'Change Photo',
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: AppTypography.textTheme.titleLarge,
-    );
-  }
-
-  Widget _buildEmailField() {
-    return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Email',
-          style:
-              AppTypography.textTheme.titleSmall,
-        ),
-
-        const SizedBox(
-          height: AppSpacing.xs,
-        ),
-
-        TextFormField(
-          initialValue: _profile.email,
-          readOnly: true,
-          decoration: InputDecoration(
-            hintText: 'Your account email',
-            prefixIcon: const Icon(
-              Icons.email_outlined,
-            ),
-            suffixIcon: const Icon(
-              Icons.lock_outline,
-              size: 18,
-              color: AppColors.textSecondary,
-            ),
-            filled: true,
-            fillColor: AppColors.background,
-            border: OutlineInputBorder(
-              borderRadius:
-                  BorderRadius.circular(
-                AppRadius.input,
-              ),
-              borderSide: const BorderSide(
-                color: AppColors.border,
               ),
             ),
-            enabledBorder:
-                OutlineInputBorder(
-              borderRadius:
-                  BorderRadius.circular(
-                AppRadius.input,
-              ),
-              borderSide: const BorderSide(
-                color: AppColors.border,
-              ),
+
+            const SizedBox(
+              height: AppSpacing.md,
             ),
-          ),
-        ),
 
-        const SizedBox(
-          height: AppSpacing.xs,
-        ),
-
-        Text(
-          'This is the email associated with your account.',
-          style: AppTypography
-              .textTheme
-              .bodySmall,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    required IconData icon,
-    int maxLines = 1,
-    int? maxLength,
-    String? Function(String?)? validator,
-  }) {
-    return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style:
-              AppTypography.textTheme.titleSmall,
-        ),
-
-        const SizedBox(
-          height: AppSpacing.xs,
-        ),
-
-        TextFormField(
-          controller: controller,
-          validator: validator,
-          maxLines: maxLines,
-          maxLength: maxLength,
-          decoration: InputDecoration(
-            hintText: hint,
-            prefixIcon: Padding(
-              padding: EdgeInsets.only(
-                bottom: maxLines > 1 ? 55 : 0,
-              ),
-              child: Icon(icon),
+            _FieldLabel(
+              label: 'Location',
             ),
-            filled: true,
-            fillColor: AppColors.surface,
-            border: OutlineInputBorder(
-              borderRadius:
-                  BorderRadius.circular(
-                AppRadius.input,
-              ),
-              borderSide: const BorderSide(
-                color: AppColors.border,
-              ),
-            ),
-            enabledBorder:
-                OutlineInputBorder(
-              borderRadius:
-                  BorderRadius.circular(
-                AppRadius.input,
-              ),
-              borderSide: const BorderSide(
-                color: AppColors.border,
-              ),
-            ),
-            focusedBorder:
-                OutlineInputBorder(
-              borderRadius:
-                  BorderRadius.circular(
-                AppRadius.input,
-              ),
-              borderSide: const BorderSide(
-                color: AppColors.primary,
-                width: 1.5,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 
-  Widget _buildInterestSelector() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(
-        AppSpacing.md,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(
-          AppRadius.card,
-        ),
-        border: Border.all(
-          color: AppColors.border,
-        ),
-      ),
-      child: Wrap(
-        spacing: AppSpacing.sm,
-        runSpacing: AppSpacing.sm,
-        children: _interests.map(
-          (interest) {
-            final selected =
-                _selectedInterests.contains(
-              interest.name,
-            );
+            const SizedBox(
+              height: AppSpacing.xs,
+            ),
 
-            return InkWell(
-              onTap: () {
-                _toggleInterest(
-                  interest.name,
-                );
-              },
-              borderRadius:
-                  BorderRadius.circular(
-                AppRadius.pill,
-              ),
-              child: AnimatedContainer(
-                duration: const Duration(
-                  milliseconds: 180,
+            TextField(
+              readOnly: true,
+              controller:
+                  _locationController,
+              onTap:
+                  _showLocationPicker,
+              decoration:
+                  InputDecoration(
+                prefixIcon:
+                    const Icon(
+                  Icons
+                      .location_on_outlined,
                 ),
-                padding:
-                    const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.sm,
+                suffixIcon:
+                    const Icon(
+                  Icons
+                      .keyboard_arrow_down_rounded,
                 ),
-                decoration: BoxDecoration(
-                  color: selected
-                      ? AppColors.primary
-                      : AppColors.primaryLight,
-                  borderRadius:
-                      BorderRadius.circular(
-                    AppRadius.pill,
-                  ),
-                  border: Border.all(
-                    color: selected
-                        ? AppColors.primary
-                        : AppColors.border,
-                  ),
+                hintText:
+                    'Select location',
+              ),
+            ),
+
+            const SizedBox(
+              height: AppSpacing.xl,
+            ),
+
+            Text(
+              'About You',
+              style: AppTypography
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(
+                fontWeight:
+                    FontWeight.w700,
+              ),
+            ),
+
+            const SizedBox(
+              height: AppSpacing.md,
+            ),
+
+            _FieldLabel(
+              label: 'Bio',
+            ),
+
+            const SizedBox(
+              height: AppSpacing.xs,
+            ),
+
+            TextField(
+              controller:
+                  _bioController,
+              minLines: 3,
+              maxLines: 5,
+              decoration:
+                  const InputDecoration(
+                hintText:
+                    'Tell organizations a little about yourself',
+                alignLabelWithHint: true,
+              ),
+            ),
+
+            const SizedBox(
+              height: AppSpacing.xl,
+            ),
+
+            Text(
+              'Your Interests',
+              style: AppTypography
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(
+                fontWeight:
+                    FontWeight.w700,
+              ),
+            ),
+
+            const SizedBox(
+              height: AppSpacing.xs,
+            ),
+
+            Text(
+              'Select the causes you care about.',
+              style: AppTypography
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(
+                color:
+                    AppColors.textSecondary,
+              ),
+            ),
+
+            const SizedBox(
+              height: AppSpacing.md,
+            ),
+
+            Container(
+              width: double.infinity,
+              padding:
+                  const EdgeInsets.all(
+                AppSpacing.md,
+              ),
+              decoration:
+                  BoxDecoration(
+                color:
+                    AppColors.surface,
+                borderRadius:
+                    BorderRadius.circular(
+                  AppRadius.card,
                 ),
-                child: Row(
-                  mainAxisSize:
-                      MainAxisSize.min,
-                  children: [
-                    Icon(
-                      interest.icon,
-                      size: 17,
-                      color: selected
-                          ? AppColors.white
-                          : AppColors.primary,
-                    ),
+                border:
+                    Border.all(
+                  color:
+                      AppColors.border,
+                ),
+              ),
+              child: Wrap(
+                spacing:
+                    AppSpacing.sm,
+                runSpacing:
+                    AppSpacing.sm,
+                children:
+                    _availableInterests
+                        .map(
+                  (interest) {
+                    final selected =
+                        _selectedInterests
+                            .contains(
+                      interest,
+                    );
 
-                    const SizedBox(
-                      width: AppSpacing.xs,
-                    ),
-
-                    Text(
-                      interest.name,
-                      style: AppTypography
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(
+                    return FilterChip(
+                      label:
+                          Text(interest),
+                      selected:
+                          selected,
+                      onSelected:
+                          (value) {
+                        setState(() {
+                          if (value) {
+                            _selectedInterests
+                                .add(
+                              interest,
+                            );
+                          } else {
+                            _selectedInterests
+                                .remove(
+                              interest,
+                            );
+                          }
+                        });
+                      },
+                      selectedColor:
+                          AppColors
+                              .primaryLight,
+                      checkmarkColor:
+                          AppColors.primary,
+                      labelStyle:
+                          AppTypography
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(
+                            color: selected
+                                ? AppColors
+                                    .primary
+                                : AppColors
+                                    .textPrimary,
+                            fontWeight:
+                                selected
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                          ),
+                      side: BorderSide(
                         color: selected
-                            ? AppColors.white
-                            : AppColors.primary,
-                        fontWeight:
-                            FontWeight.w600,
+                            ? AppColors
+                                .primary
+                            : AppColors.border,
                       ),
-                    ),
-                  ],
-                ),
+                    );
+                  },
+                ).toList(),
               ),
-            );
-          },
-        ).toList(),
+            ),
+
+            const SizedBox(
+              height: AppSpacing.xl,
+            ),
+
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child:
+                  ElevatedButton(
+                onPressed:
+                    _isSaving
+                        ? null
+                        : _saveProfile,
+                child: _isSaving
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child:
+                            CircularProgressIndicator(
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text(
+                        'Save Changes',
+                      ),
+              ),
+            ),
+
+            const SizedBox(
+              height: AppSpacing.lg,
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _InterestOption {
-  const _InterestOption({
-    required this.name,
-    required this.icon,
+class _FieldLabel
+    extends StatelessWidget {
+  const _FieldLabel({
+    required this.label,
   });
 
-  final String name;
-  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(
+    BuildContext context,
+  ) {
+    return Text(
+      label,
+      style: AppTypography
+          .textTheme
+          .labelLarge
+          ?.copyWith(
+        fontWeight:
+            FontWeight.w600,
+      ),
+    );
+  }
 }

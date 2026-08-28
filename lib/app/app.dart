@@ -4,7 +4,9 @@ import 'router.dart';
 import 'theme.dart';
 
 class VolunteerConnectApp extends StatelessWidget {
-  const VolunteerConnectApp({super.key});
+  const VolunteerConnectApp({
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -12,7 +14,6 @@ class VolunteerConnectApp extends StatelessWidget {
       title: 'Volunteer Connect',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      themeMode: ThemeMode.light,
       routerConfig: AppRouter.router,
     );
   }

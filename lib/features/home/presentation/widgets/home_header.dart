@@ -13,8 +13,47 @@ class HomeHeader extends StatelessWidget {
 
   final String userName;
 
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+
+    if (hour >= 5 && hour < 12) {
+      return 'Good morning';
+    }
+
+    if (hour >= 12 && hour < 17) {
+      return 'Good afternoon';
+    }
+
+    if (hour >= 17 && hour < 21) {
+      return 'Good evening';
+    }
+
+    return 'Hello';
+  }
+
+  String _getSubtitle() {
+    final hour = DateTime.now().hour;
+
+    if (hour >= 5 && hour < 12) {
+      return 'Ready to make an impact?';
+    }
+
+    if (hour >= 12 && hour < 17) {
+      return 'Ready to make an impact?';
+    }
+
+    if (hour >= 17 && hour < 21) {
+      return 'Make a difference today.';
+    }
+
+    return 'Looking for ways to make an impact?';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final greeting = _getGreeting();
+    final subtitle = _getSubtitle();
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -23,7 +62,7 @@ class HomeHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Good morning, $userName 👋',
+                '$greeting, $userName 👋',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: AppTypography.textTheme.headlineSmall?.copyWith(
@@ -31,9 +70,13 @@ class HomeHeader extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(height: AppSpacing.xs),
+              const SizedBox(
+                height: AppSpacing.xs,
+              ),
               Text(
-                'Ready to make an impact?',
+                subtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: AppTypography.textTheme.bodyMedium?.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -41,20 +84,32 @@ class HomeHeader extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(width: AppSpacing.sm),
+
+        const SizedBox(
+          width: AppSpacing.sm,
+        ),
+
         _HeaderButton(
           icon: Icons.notifications_none_rounded,
           onPressed: () {},
         ),
-        const SizedBox(width: AppSpacing.sm),
+
+        const SizedBox(
+          width: AppSpacing.sm,
+        ),
+
         Container(
           width: 44,
           height: 44,
           decoration: BoxDecoration(
             color: AppColors.primaryLight,
-            borderRadius: BorderRadius.circular(AppRadius.input),
+            borderRadius: BorderRadius.circular(
+              AppRadius.input,
+            ),
             border: Border.all(
-              color: AppColors.primary.withValues(alpha: 0.25),
+              color: AppColors.primary.withValues(
+                alpha: 0.25,
+              ),
               width: 1.2,
             ),
           ),
@@ -84,15 +139,21 @@ class _HeaderButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: AppColors.surface,
-      borderRadius: BorderRadius.circular(AppRadius.input),
+      borderRadius: BorderRadius.circular(
+        AppRadius.input,
+      ),
       child: InkWell(
         onTap: onPressed,
-        borderRadius: BorderRadius.circular(AppRadius.input),
+        borderRadius: BorderRadius.circular(
+          AppRadius.input,
+        ),
         child: Container(
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadius.input),
+            borderRadius: BorderRadius.circular(
+              AppRadius.input,
+            ),
             border: Border.all(
               color: AppColors.border,
             ),
